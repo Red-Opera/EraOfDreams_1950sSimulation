@@ -20,14 +20,22 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* boxComponent;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	bool isStart;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	bool isGameStart;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	class ULevelSequence* gameSequence;			// 게임 레벨 시퀀스
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
-	void OnOverlapBegin(class UPrimitiveComponent* overlappedComponent, 
+	void OnCollisionPlayer(class UPrimitiveComponent* overlappedComponent, 
 						class AActor* otherActor, 
 						class UPrimitiveComponent* otherComponent, 
 						int32 otherBodyIndex, 
@@ -35,5 +43,8 @@ protected:
 						const FHitResult& SweepResult);
 
 private:
-	class ACharacter* player;
+	void ChangeToGameCamera();			// 플레이어에서 영상 카메라로 이동
+
+	class ACharacter* player;					// 플레이어 오브젝트
+	class APlayerController* playerController;	// 플레이어 컨트롤러
 };
