@@ -2,3 +2,17 @@
 무대 사회자 : https://sketchfab.com/3d-models/the-nobleman-cea8c24e71b449daa779fb7b934111f3
 청중 man : https://sketchfab.com/3d-models/business-man-low-polygon-game-character-b6f6740f883b4749abac47af0045a9dd
 한글 폰트 : https://cactus.tistory.com/306
+무대 사회자 마이크 : https://sketchfab.com/3d-models/microphone-674959decc084dc092b67fd3cb5193f3
+피아니스트 모델 : https://sketchfab.com/3d-models/eric-rigged-001-rigged-3d-business-man-a46bc9f67aaa415bb4f3241eef900e7f
+연주 곡 : Suno AI
+마지막 청중 박수 : https://freesound.org/people/temawas/sounds/179874/
+
+구현해야 할 내용
+1. 악보 입력
+2. 게임 시작 시 MC 애니메이션 IDLE이나 의자에 앉음
+3. 게임 끝나면 박수
+4. 퀘스트
+
+5. 콘서트 나가기
+6. 콘서트 나갈 시 플레이어가 문 열고 나가기
+7. 콘서트 밖 디자인 에셋 가져오기
