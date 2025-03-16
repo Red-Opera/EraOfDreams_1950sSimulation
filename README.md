@@ -3,7 +3,7 @@
 <hr>
 <h2 id="Play">게임 영상</h2>
 <a href="https://youtu.be/aRFE9EJVUro">
-    <img src="https://github.com/user-attachments/assets/088e1bf3-3d49-4ec5-a19d-6f04e11be56a" width="100%" height="100%"/>
+    <img src="https://github.com/user-attachments/assets/371df920-064a-4c17-8e0f-9d09d2497189" width="100%" height="100%"/>
 </a>
 이미지를 클릭하면 영상이 재생됩니다.
 
