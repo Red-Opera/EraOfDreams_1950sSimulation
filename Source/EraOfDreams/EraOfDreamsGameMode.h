@@ -1,6 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
@@ -9,11 +7,12 @@
 UCLASS(minimalapi)
 class AEraOfDreamsGameMode : public AGameModeBase
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	AEraOfDreamsGameMode();
+    AEraOfDreamsGameMode();
+
+protected:
+    virtual void Tick(float DeltaTime) override;
+    virtual void BeginPlay() override;
 };
-
-
-

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -12,10 +12,8 @@ class ERAOFDREAMS_API AMusicGame : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AMusicGame();
 
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(EditAnywhere)
@@ -28,10 +26,9 @@ public:
 	bool isGameStart;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
-	class ULevelSequence* gameSequence;			// °ÔÀÓ ·¹º§ ½ÃÄö½º
+	class ULevelSequence* gameSequence;			// ê²Œì„ ë ˆë²¨ ì‹œí€€ìŠ¤
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
@@ -43,8 +40,8 @@ protected:
 						const FHitResult& SweepResult);
 
 private:
-	void ChangeToGameCamera();			// ÇÃ·¹ÀÌ¾î¿¡¼­ ¿µ»ó Ä«¸Ş¶ó·Î ÀÌµ¿
+	void ChangeToGameCamera();			// í”Œë ˆì´ì–´ì—ì„œ ì˜ìƒ ì¹´ë©”ë¼ë¡œ ì´ë™
 
-	class ACharacter* player;					// ÇÃ·¹ÀÌ¾î ¿ÀºêÁ§Æ®
-	class APlayerController* playerController;	// ÇÃ·¹ÀÌ¾î ÄÁÆ®·Ñ·¯
+	class ACharacter* player;					// í”Œë ˆì´ì–´ ì˜¤ë¸Œì íŠ¸
+	class APlayerController* playerController;	// í”Œë ˆì´ì–´ ì»¨íŠ¸ë¡¤ëŸ¬
 };
