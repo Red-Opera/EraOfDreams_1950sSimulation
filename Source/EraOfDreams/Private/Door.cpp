@@ -133,7 +133,7 @@ void ADoor::Tick(float deltaTime)
             if (isClosing)
             {
                 // 문 닫힐 때는 플레이어 이동 멈춤
-                playerCharacter->StartDoorInteractionMovement(0.0f);
+                playerCharacter->StartDoorInteractionMovement(0.0f, 0.0f);
 
                 if (FMath::Fmod(debugTimeSinceLastCheck, 0.5f) < deltaTime)
                     GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow, TEXT("문 닫는 중: 플레이어 이동 없음"));
@@ -177,7 +177,30 @@ void ADoor::Tick(float deltaTime)
                     // 문 회전 진행도 계산 (0-1 사이 값)
                     float rotationProgress = FMath::Abs((currentRotation.Yaw - initialRotation.Yaw) / openAngle);
 
-                    // 회전 진행도에 따른 이동 속도 계산
+                    // 회전 방향에 따른 좌우 이동 계산
+                    float sideMovement = 0.0f;
+                    
+                    // 문과 플레이어의 상대적 위치 계산
+                    FVector doorToPlayer = playerCharacter->GetActorLocation() - GetActorLocation();
+                    FVector doorRight = GetActorRightVector();
+                    
+                    // 플레이어가 문의 어느 쪽에 있는지 내적으로 판단
+                    float rightDot = FVector::DotProduct(doorToPlayer.GetSafeNormal(), doorRight);
+                    
+                    // 문이 열리는 방향과 플레이어의 위치에 따라 좌우 이동 방향 결정
+                    bool openingToRight = openAngle > 0;
+                    bool playerOnRight = rightDot > 0;
+                    
+                    // 문이 열리는 방향과 플레이어 위치에 따른 좌우 이동 결정
+                    if ((openingToRight && playerOnRight) || (!openingToRight && !playerOnRight)) {
+                        // 문이 플레이어 쪽으로 열리면 약간 반대 방향으로 이동
+                        sideMovement = -0.3f * rotationProgress;
+                    } else {
+                        // 문이 플레이어 반대쪽으로 열리면 문 쪽으로 이동
+                        sideMovement = 0.2f * rotationProgress;
+                    }
+                    
+                    // 전진 속도 계산
                     float moveSpeed = 0.0f;
 
                     // 문 열기 초반에 속도 증가
@@ -192,13 +215,23 @@ void ADoor::Tick(float deltaTime)
 
                     // 속도 범위 제한
                     moveSpeed = FMath::Clamp(moveSpeed, 0.15f, 0.6f);
+                    sideMovement = FMath::Clamp(sideMovement, -0.4f, 0.4f);
 
-                    // 플레이어 이동 속도 적용
-                    playerCharacter->StartDoorInteractionMovement(moveSpeed);
+                    // 플레이어 이동 속도 적용 (앞뒤 및 좌우 이동)
+                    playerCharacter->StartDoorInteractionMovement(moveSpeed, sideMovement);
+                    
+                    // 좌우 이동 디버그 정보
+                    if (FMath::Fmod(debugTimeSinceLastCheck, 0.5f) < deltaTime)
+                    {
+                        GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Green,
+                            FString::Printf(TEXT("문 통과: 전진 %.2f, 좌우 %.2f, 진행도 %.2f%%"),
+                            moveSpeed, sideMovement, rotationProgress * 100.0f));
+                    }
                 }
-
                 else
-                    playerCharacter->StartDoorInteractionMovement(0.0f);
+                {
+                    playerCharacter->StartDoorInteractionMovement(0.0f, 0.0f);
+                }
             }
         }
 
@@ -402,11 +435,27 @@ void ADoor::StartDoorMovement()
     {
         // 문 열기/닫기에 따라 다른 이동 속도 설정
         float initialSpeed = isOpen ? 0.8f : 0.6f;
-        playerCharacter->StartDoorInteractionMovement(initialSpeed);
+        float initialSideSpeed = 0.0f;
+        
+        // 문과 플레이어의 상대적 위치 계산하여 초기 좌우 이동 설정
+        FVector doorToPlayer = playerCharacter->GetActorLocation() - GetActorLocation();
+        FVector doorRight = GetActorRightVector();
+        float rightDot = FVector::DotProduct(doorToPlayer.GetSafeNormal(), doorRight);
+        
+        // 문이 열리는 방향에 따라 초기 좌우 이동 조정
+        bool openingToRight = openAngle > 0;
+        bool playerOnRight = rightDot > 0;
+        
+        if ((openingToRight && playerOnRight) || (!openingToRight && !playerOnRight)) {
+            initialSideSpeed = -0.1f;  // 문이 플레이어 쪽으로 열리면 약간 반대로 이동
+        }
+        
+        playerCharacter->StartDoorInteractionMovement(initialSpeed, initialSideSpeed);
         
         // 플레이어 이동 시작 메시지
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, 
-            FString::Printf(TEXT("문 움직임 시작 - 플레이어 이동 시작 (속도: %.2f)"), initialSpeed));
+            FString::Printf(TEXT("문 움직임 시작 - 플레이어 이동 시작 (전진: %.2f, 좌우: %.2f)"), 
+            initialSpeed, initialSideSpeed));
     }
 
     // 목표 회전값 설정

@@ -41,7 +41,7 @@ public:
     
     // 문 상호작용 시 이동 시작 함수
     UFUNCTION(BlueprintCallable, Category = "Sera|Door")
-    void StartDoorInteractionMovement(float speed = 0.5f);
+    void StartDoorInteractionMovement(float speed = 0.5f, float sideMovement = 0.0f);
     
     // 문 상호작용 시 이동 종료 함수
     UFUNCTION(BlueprintCallable, Category = "Sera|Door")
@@ -71,9 +71,17 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sera|Door")
     float doorInteractionSpeed;
 
+    // 문 상호작용 시 사용할 좌우 이동 속도
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sera|Door")
+    float doorInteractionSideSpeed;
+
     // 문 상호작용 일시 정지 상태
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sera|Door")
     bool isPaused;
+
+	// 문 상호작용 중 플레이어가 이동을 제어할 수 있는지 여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sera|Door")
+	bool isControlMovement;
 
 protected:
     virtual void BeginPlay() override;
@@ -87,4 +95,5 @@ private:
     
     // 문 상호작용 전 이동 속도 (복원용)
     float previousForwardSpeed;
+    float previousRightSpeed;
 };

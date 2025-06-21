@@ -10,6 +10,15 @@
 ASera::ASera()
 {
     PrimaryActorTick.bCanEverTick = true;
+    
+    // 기본적으로 플레이어 컨트롤 활성화
+    isControlMovement = true;
+    
+    // 다른 변수 초기화
+    isDoorInteraction = false;
+    isPaused = false;
+    doorInteractionSpeed = 0.0f;
+    doorInteractionSideSpeed = 0.0f;
 }
 
 void ASera::BeginPlay()
@@ -79,7 +88,10 @@ void ASera::Tick(float deltaTime)
     
     // 문 상호작용 중 자동 이동 처리
     if (isDoorInteraction && !isPaused)
+    {
         MoveForward(doorInteractionSpeed);
+        MoveRight(doorInteractionSideSpeed);
+    }
 }
 
 void ASera::SetupPlayerInputComponent(UInputComponent* playerInputComponent)
@@ -110,18 +122,22 @@ float ASera::GetRightSpeed() const
     return rightAxisSpeed / 3.0f;
 }
 
-void ASera::StartDoorInteractionMovement(float speed)
+void ASera::StartDoorInteractionMovement(float speed, float sideMovement)
 {
     // 첫 상호작용 시작 시에만 이전 속도 저장
     if (!isDoorInteraction)
     {
         previousForwardSpeed = forwardAxisSpeed;
+        previousRightSpeed = rightAxisSpeed;
+
+        // 플레이어 컨트롤 비활성화
+        isControlMovement = false;
 
         // 상호작용 시작 로그
         if (GEngine)
         {
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan,
-                TEXT("Door interaction movement started"));
+                TEXT("Door interaction movement started - Player control disabled"));
         }
     }
 
@@ -129,15 +145,17 @@ void ASera::StartDoorInteractionMovement(float speed)
     isDoorInteraction = true;
 
     // 속도에 따른 일시정지 상태 설정
-    isPaused = FMath::IsNearlyZero(speed);
+    isPaused = FMath::IsNearlyZero(speed) && FMath::IsNearlyZero(sideMovement);
 
     // 속도 범위 제한 적용
-    doorInteractionSpeed = FMath::Clamp(speed, 0.0f, 2.0f);
+    doorInteractionSpeed = FMath::Clamp(speed, -0.8f, 0.8f);
+    doorInteractionSideSpeed = FMath::Clamp(sideMovement, -0.8f, 0.8f);
 
     // 현재 상태 로그
     GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Cyan,
-        FString::Printf(TEXT("Door interaction speed: %.2f, %s"),
-            doorInteractionSpeed, isPaused ? TEXT("일시정지") : TEXT("이동 중")));
+        FString::Printf(TEXT("Door interaction speed: 전진 %.2f, 좌우 %.2f, %s"),
+            doorInteractionSpeed, doorInteractionSideSpeed, 
+            isPaused ? TEXT("일시정지") : TEXT("이동 중")));
 }
 
 void ASera::StopDoorInteractionMovement()
@@ -147,11 +165,16 @@ void ASera::StopDoorInteractionMovement()
 
     // 이동 속도 초기화
     doorInteractionSpeed = 0.0f;
+    doorInteractionSideSpeed = 0.0f;
+    
+    // 플레이어 컨트롤 다시 활성화
+    isControlMovement = true;
 
     // 원래 속도로 복원
     MoveForward(previousForwardSpeed);
+    MoveRight(previousRightSpeed);
 
     // 상호작용 종료 로그
     GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan,
-        TEXT("Door interaction movement stopped"));
+        TEXT("Door interaction movement stopped - Player control restored"));
 }
