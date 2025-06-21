@@ -15,36 +15,76 @@ public:
     virtual void Tick(float deltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent* playerInputComponent) override;
 
+    // 캐릭터를 앞으로 이동시키는 함수
+    UFUNCTION(BlueprintCallable, Category = "Sera")
+    void MoveForward(float value);
+
+    // 캐릭터를 좌우로 이동시키는 함수
+    UFUNCTION(BlueprintCallable, Category = "Sera")
+    void MoveRight(float value);
+
+    // 캐릭터의 달리기 상태를 반환하는 함수
     UFUNCTION(BlueprintCallable, Category = "Sera")
     bool GetIsRun();
 
+    // 캐릭터의 달리기 상태를 설정하는 함수
     UFUNCTION(BlueprintCallable, Category = "Sera")
     void SetIsRun(bool run) { isRun = run; }
 
-	UFUNCTION(BlueprintCallable, Category = "Sera")
+    // 앞으로 이동 속도 계산 함수
+    UFUNCTION(BlueprintCallable, Category = "Sera")
     float GetForwardSpeed() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Sera")
+    // 좌우 이동 속도 계산 함수
+    UFUNCTION(BlueprintCallable, Category = "Sera")
     float GetRightSpeed() const;
+    
+    // 문 상호작용 시 이동 시작 함수
+    UFUNCTION(BlueprintCallable, Category = "Sera|Door")
+    void StartDoorInteractionMovement(float speed = 0.5f);
+    
+    // 문 상호작용 시 이동 종료 함수
+    UFUNCTION(BlueprintCallable, Category = "Sera|Door")
+    void StopDoorInteractionMovement();
+    
+    // 문 상호작용 중인지 확인하는 함수
+    UFUNCTION(BlueprintCallable, Category = "Sera|Door")
+    bool IsInteractingWithDoor() const { return isDoorInteraction; }
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sera")
+    // 캐릭터 달리기 상태
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sera")
     bool isRun;
 
+    // 앞으로 이동 입력값
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Sera")
     float forwardAxisSpeed;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Sera")
+    // 좌우 이동 입력값
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Sera")
     float rightAxisSpeed;
+    
+    // 문 상호작용 상태 변수
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sera|Door")
+    bool isDoorInteraction;
+    
+    // 문 상호작용 시 사용할 이동 속도
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sera|Door")
+    float doorInteractionSpeed;
+
+    // 문 상호작용 일시 정지 상태
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sera|Door")
+    bool isPaused;
 
 protected:
     virtual void BeginPlay() override;
 
 private:
-    void StartRun();
-    void StopRun();
-	void MoveForward(float value);
+    void StartRun();        // 달리기 시작 메소드
+    void StopRun();         // 달리기 종료 메소드
+       
+    void SetIsRunTrue();    // 달리기 상태를 true로 설정하는 메소드
+    void SetIsRunFalse();   // 달리기 상태를 false로 설정하는 메소드
     
-    // 매개변수 없는 함수 추가
-    void SetIsRunTrue();
-    void SetIsRunFalse();
+    // 문 상호작용 전 이동 속도 (복원용)
+    float previousForwardSpeed;
 };

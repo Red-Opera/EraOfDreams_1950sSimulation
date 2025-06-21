@@ -16,66 +16,75 @@ public:
     virtual void NativeInitializeAnimation() override;
     virtual void NativeUpdateAnimation(float DeltaTime) override;
 
-    // 기본 애니메이션 변수들
+    // 캐릭터 이동 속도 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
     float speed = 0.0f;
 
+    // 캐릭터 공중 상태 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
     bool isInAir = false;
 
+    // 캐릭터 이동 중 상태 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
     bool isMoving = false;
 
-    // 오른손 IK 관련 변수들 (LeftPositionHandle을 위한)
+    // 오른손 IK 활성화 상태 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand IK")
     bool enableRightHandIK = false;
 
+    // 오른손 IK 월드 위치 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand IK")
     FVector rightHandIKLocation = FVector::ZeroVector;
 
+    // 오른손 IK 가중치 변수 (0-1)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand IK")
     float rightHandIKAlpha = 0.0f;
 
-    // 오른손 본의 로컬 위치 (Control Rig용)
+    // 오른손 본의 로컬 위치 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand IK")
     FVector rightHandLocalLocation = FVector::ZeroVector;
 
-    // 문 상호작용 관련
+    // 문 상호작용 상태 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door Interaction")
     bool isInteractingWithDoor = false;
 
-    // IK 설정
+    // IK 전환 속도 설정 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IK Settings")
     float ikTransitionSpeed = 5.0f;
 
+    // 최대 도달 거리 설정 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IK Settings")
     float maxReachDistance = 100.0f;
 
-    // Blueprint에서 호출 가능한 스레드 안전 함수들
+    // 오른손 IK 위치 반환 함수
     UFUNCTION(BlueprintCallable, Category = "Hand IK", meta = (BlueprintThreadSafe = "true"))
     FVector GetRightHandIKLocation() const { return rightHandIKLocation; }
 
+    // 오른손 IK 가중치 반환 함수
     UFUNCTION(BlueprintCallable, Category = "Hand IK", meta = (BlueprintThreadSafe = "true"))
     float GetRightHandIKAlpha() const { return rightHandIKAlpha; }
 
+    // 오른손 IK 활성화 상태 반환 함수
     UFUNCTION(BlueprintCallable, Category = "Hand IK", meta = (BlueprintThreadSafe = "true"))
     bool IsRightHandIKEnabled() const { return enableRightHandIK; }
 
-    // 오른손 본의 로컬 위치를 반환하는 함수 추가
+    // 오른손 본의 로컬 위치 반환 함수
     UFUNCTION(BlueprintCallable, Category = "Hand IK", meta = (BlueprintThreadSafe = "true"))
     FVector GetRightHandLocalLocation() const { return rightHandLocalLocation; }
 
+    // 문 상호작용 상태 반환 함수
     UFUNCTION(BlueprintCallable, Category = "Door Interaction", meta = (BlueprintThreadSafe = "true"))
     bool IsInteractingWithDoor() const { return isInteractingWithDoor; }
 
-public:
-    // 문 상호작용 시작을 알리는 함수 수정
-    UFUNCTION(BlueprintCallable, Category = "Door Interaction")
-    void OnDoorInteractionStarted(const FVector& HandleLocation, class ADoor* InteractingDoor);
+    // 손과 손잡이 사이 거리 반환 함수
+    UFUNCTION(BlueprintCallable, Category = "Door Interaction", meta = (BlueprintThreadSafe = "true"))
+    float GetHandToHandleDistance() const;
 
-private:
-    // DoorHandleLocation 변수 제거 (사용되지 않음)
-    
+public:
+    // 문 상호작용 시작 함수
+    UFUNCTION(BlueprintCallable, Category = "Door Interaction")
+    void OnDoorInteractionStarted(const FVector& handleLocation, class ADoor* interactingDoor);
+
 protected:
     // 캐릭터 참조
     UPROPERTY(BlueprintReadOnly, Category = "Character")
@@ -86,47 +95,45 @@ protected:
     class UCharacterMovementComponent* characterMovement;
 
 private:
-    // 애니메이션 업데이트 함수들
-    void UpdateMovementValues();
-    void UpdateDoorInteractionValues();
-    void UpdateRightHandIK(float DeltaTime);
+    void UpdateMovementValues();                // 이동 상태 업데이트 함수
+    void UpdateDoorInteractionValues();         // 문 상호작용 상태 업데이트 함수
+    void UpdateRightHandIK(float DeltaTime);    // 오른손 IK 업데이트 함수
     
-    // 현재 상호작용 중인 문의 LeftPositionHandle 위치를 가져오는 함수
+    // 현재 문의 손잡이 위치 반환 함수
     FVector GetDoorLeftPositionHandleLocation();
     
-    // 가장 가까운 문을 찾는 함수 추가
+    // 가장 가까운 문 객체 찾기 함수
     class ADoor* GetNearestDoor();
     
-    // 타겟이 도달 가능한 범위 내에 있는지 확인
-    bool IsTargetWithinReach(const FVector& TargetLocation);
+    // 타겟이 도달 가능한 범위 내에 있는지 확인 함수
+    bool IsTargetWithinReach(const FVector& targetLocation);
     
-    // 월드 위치를 캐릭터 메시의 로컬 위치로 변환하는 함수
-    FVector ConvertWorldToLocalBoneSpace(const FVector& WorldLocation, const FName& BoneName);
+    // 월드 위치를 본 로컬 위치로 변환하는 함수
+    FVector ConvertWorldToLocalBoneSpace(const FVector& worldLocation, const FName& boneName);
     
-    // 목표 IK 위치 (보간에 사용)
-    FVector targetRightHandIKLocation = FVector::ZeroVector;
+    FVector targetRightHandIKLocation = FVector::ZeroVector;    // 목표 IK 위치 변수
+    FVector previousRightHandIKLocation = FVector::ZeroVector;  // 이전 IK 위치 변수
     
-    // 이전 IK 위치 (보간 시작점)
-    FVector previousRightHandIKLocation = FVector::ZeroVector;
-    
-    // 문 상호작용 종료 후 전환 상태
+    // 문 상호작용 종료 전환 상태 변수
     bool isTransitioningFromDoor = false;
     
-    // 마지막 유효 손 위치 (전환 중에 사용)
+    // 마지막 유효 손 위치 변수
     FVector lastValidHandPosition = FVector::ZeroVector;
-    
-    // 전환 타이머
-    float transitionTimer = 0.0f;
-    float transitionDuration = 0.5f;
 
-    // 현재 상호작용 중인 문에 대한 참조
+    float transitionTimer = 0.0f;       // 전환 타이머 변수
+    float transitionDuration = 0.5f;    // 전환 지속 시간 변수
+
+    // 현재 상호작용 중인 문 참조
     UPROPERTY()
     class ADoor* activeDoor = nullptr;
     
-    // 손 IK가 목표에 도달했는지 여부
+    // 손 IK가 목표에 도달 상태 변수
     bool hasReachedTarget = false;
     
-    // 손 IK가 충분히 적용되었다고 판단할 임계값
+    // 손 IK 완료 임계값 설정
     UPROPERTY(EditAnywhere, Category = "IK Settings")
     float handIKThreshold = 0.9f;
+
+    // 손과 손잡이 사이 거리 저장 변수
+    float currentHandToHandleDistance = 0.0f;
 };
