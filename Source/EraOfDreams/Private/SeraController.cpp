@@ -5,7 +5,7 @@ void ASeraController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	const TArray<FKey> keys = { EKeys::G, EKeys::Q };
+	const TArray<FKey> keys = { EKeys::G, EKeys::Q, EKeys::LeftShift };
 
 	for (const FKey& key : keys)
 	{
