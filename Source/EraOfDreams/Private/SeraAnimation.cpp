@@ -208,15 +208,6 @@ void USeraAnimation::UpdateRightHandIK(float DeltaTime)
 
         // 월드 위치를 로컬 위치로 변환
         rightHandLocalLocation = ConvertWorldToLocalBoneSpace(rightHandIKLocation, FName("RightHandIndex1"));
-
-        // 디버그 로그 출력 (주기적으로만 출력하여 화면 스팸 방지)
-        if (FMath::Fmod(transitionTimer, 0.5f) < DeltaTime)
-        {
-            GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Cyan,
-                FString::Printf(TEXT("손 IK - 월드 위치: %s, 로컬 위치: %s, 알파값: %.2f, 전환 중: %s"),
-                    *rightHandIKLocation.ToString(), *rightHandLocalLocation.ToString(), rightHandIKAlpha,
-                    isTransitioningFromDoor ? TEXT("예") : TEXT("아니오")));
-        }
     }
 
     else if (rightHandIKAlpha <= 0.01f)
@@ -273,15 +264,8 @@ void USeraAnimation::UpdateDoorInteractionValues()
                     FString::Printf(TEXT("손 위치 전환 시작: %s에서 원래 위치로"), *lastValidHandPosition.ToString()));
             }
         }
-
-        // 디버그 로그 출력 (주기적으로만 출력하여 화면 스팸 방지)
-        if (isInteractingWithDoor && GEngine && FMath::Fmod(transitionTimer, 1.0f) < 0.01f)
-        {
-            GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow,
-                FString::Printf(TEXT("문 상호작용 중 - 손잡이 위치: %s, 알파값: %.2f"),
-                    *rightHandIKLocation.ToString(), rightHandIKAlpha));
-        }
     }
+
     else if (!isTransitioningFromDoor)
     {
         // 문이 없으면 상호작용 해제
@@ -315,14 +299,6 @@ FVector USeraAnimation::ConvertWorldToLocalBoneSpace(const FVector& worldLocatio
 
     // 월드 좌표를 본 로컬 좌표로 변환
     FVector localLocation = boneTransform.InverseTransformPosition(worldLocation);
-
-    // 디버그 로그 출력 (주기적으로만 출력하여 화면 스팸 방지)
-    if (FMath::Fmod(transitionTimer, 1.0f) < 0.01f)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Cyan,
-            FString::Printf(TEXT("좌표 변환 - 월드 위치: %s → 로컬 위치: %s (본: %s)"),
-                *worldLocation.ToString(), *localLocation.ToString(), *boneName.ToString()));
-    }
 
     return localLocation;
 }

@@ -251,6 +251,16 @@ void ADoor::Tick(float deltaTime)
                 // 문 열기/닫기 완료 메시지
                 GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green,
                     FString::Printf(TEXT("문 %s 완료"), isOpen ? TEXT("열기") : TEXT("닫기")));
+                
+                // 레벨 전환 처리 추가
+                if (shouldLoadNewLevel && isOpen && !isTransitioningLevel)
+                {
+                    if (loadLevelWhenFullyOpen)
+                    {
+                        // 레벨 전환 시작
+                        StartLevelTransition();
+                    }
+                }
             }
         }
     }
@@ -518,4 +528,74 @@ void ADoor::TryToggleDoor()
 
     else
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("문 토글 실패 : 플레이어 캐릭터 참조가 없습니다"));
+}
+
+// 레벨 전환 시작 함수
+void ADoor::StartLevelTransition()
+{
+    if (isTransitioningLevel)
+        return;
+        
+    isTransitioningLevel = true;
+    
+    // 레벨 에셋 검증 방식 수정 (IsValid() 대신 IsNull() 사용)
+    if (levelToLoadAsset.IsNull())
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, 
+            TEXT("레벨 전환 실패: 목표 레벨 에셋이 지정되지 않았습니다"));
+        isTransitioningLevel = false;
+        return;
+    }
+    
+    // 레벨 이름 가져오기
+    FString levelPath = levelToLoadAsset.ToSoftObjectPath().ToString();
+    FString levelName = FPaths::GetBaseFilename(levelPath);
+    
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, 
+        FString::Printf(TEXT("%s 레벨로 전환 중... (경로: %s)"), *levelName, *levelPath));
+    
+    // Blueprint에서 처리하는 경우 델리게이트 호출
+    if (useBlueprintLevelTransition)
+    {
+        OnLevelTransitionStarted.Broadcast();
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, 
+            TEXT("Blueprint 레벨 전환 이벤트 발생"));
+    }
+    // C++에서 처리하는 경우 타이머로 레벨 로드
+    else
+    {
+        FTimerHandle UnusedHandle;
+        GetWorldTimerManager().SetTimer(
+            UnusedHandle, 
+            FTimerDelegate::CreateLambda([this]()
+            {
+                LoadTargetLevel();
+            }), 
+            delayBeforeLoading, 
+            false);
+    }
+}
+
+// Blueprint에서 호출 가능한 레벨 로드 함수
+void ADoor::LoadTargetLevel()
+{
+    // 에셋 레퍼런스 확인 방식 수정
+    if (levelToLoadAsset.IsNull())
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, 
+            TEXT("레벨 로드 실패: 목표 레벨 에셋이 지정되지 않았습니다"));
+        isTransitioningLevel = false;
+        return;
+    }
+    
+    // 레벨 경로에서 이름 추출 및 로드
+    FString levelPath = levelToLoadAsset.ToSoftObjectPath().ToString();
+    FString levelName = FPaths::GetBaseFilename(levelPath);
+    
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, 
+        FString::Printf(TEXT("레벨 로드 중: %s (경로: %s)"), *levelName, *levelPath));
+    
+    UGameplayStatics::OpenLevel(GetWorld(), FName(*levelName));
+    
+    isTransitioningLevel = false;
 }

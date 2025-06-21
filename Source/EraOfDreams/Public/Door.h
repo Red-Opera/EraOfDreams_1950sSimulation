@@ -4,7 +4,11 @@
 #include "GameFramework/Actor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+#include "Engine/LevelStreaming.h"
 #include "Door.generated.h"
+
+// 레벨 전환 완료 시 호출할 델리게이트 선언
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDoorLevelTransitionEvent);
 
 UCLASS()
 class ERAOFDREAMS_API ADoor : public AActor
@@ -31,6 +35,34 @@ public:
     // 문 열림/닫힘 속도 조절값
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door Settings")
     float doorSpeed = 1.5f;
+
+    // 레벨 전환 관련 변수
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Level Transition")
+    bool shouldLoadNewLevel = false;
+    
+    // Blueprint에서 직접 레벨 에셋 선택 가능
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Level Transition", meta = (EditCondition = "shouldLoadNewLevel", AllowedClasses = "World"))
+    TSoftObjectPtr<UWorld> levelToLoadAsset;
+    
+    // 문이 완전히 열렸을 때 레벨 로드 여부
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Level Transition", meta = (EditCondition = "shouldLoadNewLevel"))
+    bool loadLevelWhenFullyOpen = true;
+
+    // 레벨 로드 전 지연 시간(초)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Level Transition", meta = (EditCondition = "shouldLoadNewLevel"))
+    float delayBeforeLoading = 0.5f;
+    
+    // Blueprint에서 레벨 전환 처리 활성화 여부
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Level Transition", meta = (EditCondition = "shouldLoadNewLevel"))
+    bool useBlueprintLevelTransition = false;
+    
+    // 레벨 전환 시작 시 호출되는 델리게이트 (Blueprint에서 활용)
+    UPROPERTY(BlueprintAssignable, Category = "Level Transition")
+    FOnDoorLevelTransitionEvent OnLevelTransitionStarted;
+    
+    // Blueprint에서 호출할 수 있는 레벨 전환 함수
+    UFUNCTION(BlueprintCallable, Category = "Level Transition")
+    void LoadTargetLevel();
 
     // 문의 현재 열림 상태
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Door Settings")
@@ -89,6 +121,12 @@ protected:
 private:
     // 손 IK 시작 및 문 상호작용 준비 함수
     void ToggleDoor();
+    
+    // 지정된 지연 후 레벨 전환 시작
+    void StartLevelTransition();
+    
+    // 레벨 전환 중인지 여부
+    bool isTransitioningLevel = false;
 
     // 플레이어가 상호작용 가능 범위 내에 있는지 여부
     bool isPlayerInRange = false;

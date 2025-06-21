@@ -150,12 +150,6 @@ void ASera::StartDoorInteractionMovement(float speed, float sideMovement)
     // 속도 범위 제한 적용
     doorInteractionSpeed = FMath::Clamp(speed, -0.8f, 0.8f);
     doorInteractionSideSpeed = FMath::Clamp(sideMovement, -0.8f, 0.8f);
-
-    // 현재 상태 로그
-    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Cyan,
-        FString::Printf(TEXT("Door interaction speed: 전진 %.2f, 좌우 %.2f, %s"),
-            doorInteractionSpeed, doorInteractionSideSpeed, 
-            isPaused ? TEXT("일시정지") : TEXT("이동 중")));
 }
 
 void ASera::StopDoorInteractionMovement()
