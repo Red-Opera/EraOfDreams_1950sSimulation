@@ -8,6 +8,27 @@ public class EraOfDreams : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "LevelSequence", "MovieScene" });
-	}
+		PublicDependencyModuleNames.AddRange(new string[] 
+		{ 
+			"Core", 
+			"CoreUObject", 
+			"Engine", 
+			"InputCore", 
+			"EnhancedInput", 
+			"LevelSequence", 
+			"MovieScene",
+			"MotionWarping",
+            "GameplayTags",
+            "AnimGraphRuntime",
+            "AnimationWarpingRuntime",
+            "Chooser",
+            "PoseSearch",
+            "StructUtils"
+        });
+
+        PublicIncludePaths.Add("EraOfDreams/Public");
+        PublicIncludePaths.Add("EraOfDreams/Public/Core");
+        PublicIncludePaths.Add("EraOfDreams/Public/Traversal");
+        PublicIncludePaths.Add("EraOfDreams/Public/Samples");
+    }
 }
