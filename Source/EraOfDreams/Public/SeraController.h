@@ -2,10 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Core/GameAnimationBasePlayerController.h"
 #include "SeraController.generated.h"
 
 UCLASS()
-class ERAOFDREAMS_API ASeraController : public APlayerController
+class ERAOFDREAMS_API ASeraController : public AGameAnimationBasePlayerController
 {
     GENERATED_BODY()
 

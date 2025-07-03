@@ -1,11 +1,10 @@
 #include "Sera.h"
 #include "SeraAnimation.h"
-#include "KeyInputManager.h"
-
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Core/GameAnimationBasePlayerController.h"
 
 ASera::ASera()
 {
@@ -14,7 +13,7 @@ ASera::ASera()
     // 기본적으로 플레이어 컨트롤 활성화
     isControlMovement = true;
     
-    // 다른 변수 초기화
+    // 문 상호작용 변수 초기화
     isDoorInteraction = false;
     isPaused = false;
     doorInteractionSpeed = 0.0f;
@@ -24,150 +23,109 @@ ASera::ASera()
 void ASera::BeginPlay()
 {
     Super::BeginPlay();
-
-    // 달리기 키 이벤트 등록
-    KeyInputManager::AddEvent(EKeys::LeftShift, this, &ASera::SetIsRunTrue, EKeyEventType::Pressed);
-    KeyInputManager::AddEvent(EKeys::LeftShift, this, &ASera::SetIsRunFalse, EKeyEventType::Released);
-}
-
-void ASera::MoveForward(float value)
-{
-    forwardAxisSpeed = value;
-
-    // 카메라 방향 기준 전방 벡터 계산
-    float rotation = GetControlRotation().Yaw;
-    FRotator rotationValue = FRotator(0.0f, rotation, 0.0f);
-
-    // 이동 방향 및 속도 계산
-    FVector forwardVector = UKismetMathLibrary::GetForwardVector(rotationValue);
-    float forwardSpeed = GetForwardSpeed();
-
-    // 캐릭터 이동 적용
-    AddMovementInput(forwardVector, forwardSpeed);
-}
-
-void ASera::MoveRight(float value)
-{
-    rightAxisSpeed = value;
-
-    // 카메라 방향 기준 측면 벡터 계산
-    float rotation = GetControlRotation().Yaw;
-    FRotator rotationValue = FRotator(0.0f, rotation, 0.0f);
-
-    // 이동 방향 및 속도 계산
-    FVector rightVector = UKismetMathLibrary::GetRightVector(rotationValue);
-    float rightSpeed = GetRightSpeed();
-
-    // 캐릭터 이동 적용
-    AddMovementInput(rightVector, rightSpeed);
-}
-
-void ASera::StartRun()
-{
-    isRun = true;
-}
-
-void ASera::StopRun()
-{
-    isRun = false;
-}
-
-void ASera::SetIsRunTrue()
-{
-    isRun = true;
-}
-
-void ASera::SetIsRunFalse()
-{
-    isRun = false;
 }
 
 void ASera::Tick(float deltaTime)
 {
     Super::Tick(deltaTime);
     
-    // 문 상호작용 중 자동 이동 처리
+    //// 문 상호작용 중 자동 이동 처리
     if (isDoorInteraction && !isPaused)
     {
-        MoveForward(doorInteractionSpeed);
-        MoveRight(doorInteractionSideSpeed);
+        // GameAnimationBasePlayerController 사용 방식으로 이동 처리
+        APlayerController* PC = Cast<APlayerController>(GetController());
+    
+        if (PC)
+        {
+            FVector direction = GetActorForwardVector() * doorInteractionSpeed + 
+                               GetActorRightVector() * doorInteractionSideSpeed;
+            AddMovementInput(direction, 1.0f);
+        }
     }
 }
 
 void ASera::SetupPlayerInputComponent(UInputComponent* playerInputComponent)
 {
     Super::SetupPlayerInputComponent(playerInputComponent);
-}
-
-bool ASera::GetIsRun()
-{
-    return isRun;
-}
-
-float ASera::GetForwardSpeed() const
-{
-    // 달리기 상태일 때 정상 속도, 아닐 때 감소된 속도
-    if (forwardAxisSpeed >= 0.0 && isRun)
-        return forwardAxisSpeed;
-
-    return forwardAxisSpeed / 3.0f;
-}
-
-float ASera::GetRightSpeed() const
-{
-    // 달리기 상태일 때 정상 속도, 아닐 때 감소된 속도
-    if (forwardAxisSpeed >= 0.0 && isRun)
-        return rightAxisSpeed;
-
-    return rightAxisSpeed / 3.0f;
+    // 입력 처리는 GameAnimationBasePlayerController에서 담당
 }
 
 void ASera::StartDoorInteractionMovement(float speed, float sideMovement)
 {
-    // 첫 상호작용 시작 시에만 이전 속도 저장
+    // 첫 상호작용 시작 시에만 이전 상태 저장
     if (!isDoorInteraction)
     {
-        previousForwardSpeed = forwardAxisSpeed;
-        previousRightSpeed = rightAxisSpeed;
-
         // 플레이어 컨트롤 비활성화
         isControlMovement = false;
-
-        // 상호작용 시작 로그
-        if (GEngine)
+        
+        // 이전 걷기/달리기 상태 저장
+        wasRunning = false;
+        
+        // 강제 걷기 모드 설정
+        if (AGameAnimationBasePlayerController* PC = Cast<AGameAnimationBasePlayerController>(GetController()))
         {
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan,
-                TEXT("Door interaction movement started - Player control disabled"));
-        }
-    }
+            if (PC->GetGameAnimationBaseCharacter())
+            {
+                // 이전 상태 저장
+                wasRunning = PC->GetGameAnimationBaseCharacter()->bWantsToSprint;
+                
+                // 걷기 모드 강제 설정
+                PC->GetGameAnimationBaseCharacter()->bWantsToSprint = false;
+                PC->GetGameAnimationBaseCharacter()->bWantsToWalk = true;
 
+                GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan,
+                    FString::Printf(TEXT("문 통과 시작: %s 모드로 전환됨"), 
+						PC->GetGameAnimationBaseCharacter()->bWantsToSprint ? TEXT("달리기") : TEXT("걷기")));   
+            }
+
+            else
+                GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red,
+					TEXT("문 통과 오류: GameAnimationBaseCharacter 참조가 없습니다"));
+        }
+    
+        // 상호작용 시작 로그
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan,
+            TEXT("Door interaction movement started - Player control disabled"));
+    }
+    
     // 상호작용 상태 설정
     isDoorInteraction = true;
-
+    
     // 속도에 따른 일시정지 상태 설정
     isPaused = FMath::IsNearlyZero(speed) && FMath::IsNearlyZero(sideMovement);
-
-    // 속도 범위 제한 적용
-    doorInteractionSpeed = FMath::Clamp(speed, -0.8f, 0.8f);
-    doorInteractionSideSpeed = FMath::Clamp(sideMovement, -0.8f, 0.8f);
+    
+    // 속도 범위 제한 적용 (더 낮은 최대값으로 제한)
+    doorInteractionSpeed = FMath::Clamp(speed, -0.4f, 0.4f);
+    doorInteractionSideSpeed = FMath::Clamp(sideMovement, -0.4f, 0.4f);
 }
 
 void ASera::StopDoorInteractionMovement()
 {
     // 상호작용 상태 해제
     isDoorInteraction = false;
-
+    
     // 이동 속도 초기화
     doorInteractionSpeed = 0.0f;
     doorInteractionSideSpeed = 0.0f;
     
     // 플레이어 컨트롤 다시 활성화
     isControlMovement = true;
-
-    // 원래 속도로 복원
-    MoveForward(previousForwardSpeed);
-    MoveRight(previousRightSpeed);
-
+    
+    // 이전 달리기/걷기 상태 복원
+    if (AGameAnimationBasePlayerController* PC = Cast<AGameAnimationBasePlayerController>(GetController()))
+    {
+        if (PC->GetGameAnimationBaseCharacter())
+        {
+            // 원래 상태로 복원
+            PC->GetGameAnimationBaseCharacter()->bWantsToSprint = wasRunning;
+            PC->GetGameAnimationBaseCharacter()->bWantsToWalk = !wasRunning;
+            
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan,
+                FString::Printf(TEXT("문 통과 완료: 이전 %s 모드로 복원"), 
+                wasRunning ? TEXT("달리기") : TEXT("걷기")));
+        }
+    }
+    
     // 상호작용 종료 로그
     GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan,
         TEXT("Door interaction movement stopped - Player control restored"));

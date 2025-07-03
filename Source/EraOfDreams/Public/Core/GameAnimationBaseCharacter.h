@@ -17,46 +17,49 @@ class ERAOFDREAMS_API AGameAnimationBaseCharacter : public ACharacter
 
 	friend class AGameAnimationBasePlayerController;
 
+public:
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
+	TObjectPtr<class USpringArmComponent> SpringArm;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
+	TObjectPtr<class UCameraComponent> Camera;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
+	TObjectPtr<class UMotionWarpingComponent> MotionWarping;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character")
+	bool bPreviousWantsFirstPerson = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character")
+	bool bWantsFirstPerson = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character")
+	bool bWantsToSprint = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character")
+	bool bWantsToWalk = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character")
+	bool bWantsToStrafe = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character")
+	bool bWantsToAim = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	TSoftObjectPtr<UCurveFloat> StrafeSpeedMapCurve;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	EGait Gait = EGait::Run;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	bool bJustLanded = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	FVector LandVelocity = FVector::ZeroVector;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Traversal")
+	TSoftObjectPtr<class UChooserTable> TraversalAnimationsChooserTable;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+	FGameplayTag JumpEventAudioGameplayTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+	FGameplayTag LandEventAudioGameplayTag;
+	UPROPERTY()
+	FTimerHandle LandTimerHandle;
+
 protected:
 	virtual void BeginPlay() override;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Character")
-		TObjectPtr<class USpringArmComponent> SpringArm;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Character")
-		TObjectPtr<class UCameraComponent> Camera;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Character")
-		TObjectPtr<class UMotionWarpingComponent> MotionWarping;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Character")
-		bool bPreviousWantsFirstPerson = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Character")
-		bool bWantsFirstPerson = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Character")
-		bool bWantsToSprint = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Character")
-		bool bWantsToWalk = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Character")
-		bool bWantsToStrafe = true;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Character")
-		bool bWantsToAim = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement")
-		TSoftObjectPtr<UCurveFloat> StrafeSpeedMapCurve;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement")
-		EGait Gait = EGait::Run;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement")
-		bool bJustLanded = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement")
-		FVector LandVelocity = FVector::ZeroVector;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Traversal")
-		TSoftObjectPtr<class UChooserTable> TraversalAnimationsChooserTable;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Audio")
-		FGameplayTag JumpEventAudioGameplayTag;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Audio")
-		FGameplayTag LandEventAudioGameplayTag;
-	UPROPERTY()
-		FTimerHandle LandTimerHandle;
 
 	UFUNCTION(BlueprintCallable, Category="Camera")
 		virtual void UpdateCamera(bool bInterpolate);

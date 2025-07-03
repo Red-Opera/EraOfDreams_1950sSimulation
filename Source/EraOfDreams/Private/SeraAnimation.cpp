@@ -11,13 +11,17 @@ USeraAnimation::USeraAnimation()
 {
     speed = 0.0f;
     isInAir = false;
-    isMoving = false;
     isInteractingWithDoor = false;
     
     // 오른손 IK 초기값 설정
     enableRightHandIK = false;
     rightHandIKAlpha = 0.0f;
     rightHandIKLocation = FVector::ZeroVector;
+    
+    // 왼손 IK 초기값 설정
+    enableLeftHandIK = false;
+    leftHandIKAlpha = 0.0f;
+    leftHandIKLocation = FVector::ZeroVector;
     
     // IK 설정 초기화
     ikTransitionSpeed = 5.0f;
@@ -56,23 +60,9 @@ void USeraAnimation::NativeUpdateAnimation(float DeltaTime)
     // 필요한 참조가 유효할 때만 업데이트 실행
     if (seraCharacter && characterMovement)
     {
-        UpdateMovementValues();
         UpdateDoorInteractionValues();
         UpdateRightHandIK(DeltaTime);
     }
-}
-
-void USeraAnimation::UpdateMovementValues()
-{
-    // 캐릭터 속도 계산
-    FVector velocity = characterMovement->Velocity;
-    speed = velocity.Size();
-    
-    // 이동 상태 확인 (3.0f 이상이면 이동 중)
-    isMoving = speed > 3.0f;
-    
-    // 공중 상태 확인
-    isInAir = characterMovement->IsFalling();
 }
 
 void USeraAnimation::OnDoorInteractionStarted(const FVector& handleLocation, ADoor* interactingDoor)
@@ -96,16 +86,20 @@ void USeraAnimation::OnDoorInteractionStarted(const FVector& handleLocation, ADo
 
         if (skeletalMesh != nullptr)
         {
-            previousRightHandIKLocation = skeletalMesh->GetBoneLocation(FName("RightHandIndex1"), EBoneSpaces::WorldSpace);
-
-            // 첫 프레임 위치 설정
+            // 오른손 위치 (소켓 이름 변경)
+            previousRightHandIKLocation = skeletalMesh->GetBoneLocation(RightHandSocketName, EBoneSpaces::WorldSpace);
             rightHandIKLocation = previousRightHandIKLocation;
+            
+            // 왼손 위치 추가
+            previousLeftHandIKLocation = skeletalMesh->GetBoneLocation(LeftHandSocketName, EBoneSpaces::WorldSpace);
+            leftHandIKLocation = previousLeftHandIKLocation;
         }
     }
 
-    // 로컬 위치 계산
-    rightHandLocalLocation = ConvertWorldToLocalBoneSpace(rightHandIKLocation, FName("RightHandIndex1"));
-
+    // 로컬 위치 계산 (오른손과 왼손 모두)
+    rightHandLocalLocation = ConvertWorldToLocalBoneSpace(rightHandIKLocation, RightHandSocketName);
+    leftHandLocalLocation = ConvertWorldToLocalBoneSpace(leftHandIKLocation, LeftHandSocketName);
+    
     // 디버그 메시지 출력
     GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
         FString::Printf(TEXT("문 상호작용 시작 - 손잡이 위치: %s"), *handleLocation.ToString()));
@@ -161,21 +155,24 @@ void USeraAnimation::UpdateRightHandIK(float DeltaTime)
             FString::Printf(TEXT("손 IK 임계값(%.2f) 도달. 문 움직임 시작합니다."), rightHandIKAlpha));
     }
 
-    // IK 위치 업데이트
+    // IK 위치 업데이트 부분
     if (isInteractingWithDoor || isTransitioningFromDoor)
     {
         USkeletalMeshComponent* skeletalMesh = seraCharacter->GetMesh();
-
+        
         if (skeletalMesh == nullptr)
             return;
-
+            
         if (isInteractingWithDoor)
         {
-            // 초기 손 위치 설정
+            // 초기 손 위치 설정 (소켓 이름 변경)
             if (targetRightHandIKLocation.IsZero())
             {
-                previousRightHandIKLocation = skeletalMesh->GetBoneLocation(FName("RightHandIndex1"), EBoneSpaces::WorldSpace);
+                previousRightHandIKLocation = skeletalMesh->GetBoneLocation(RightHandSocketName, EBoneSpaces::WorldSpace);
                 rightHandIKLocation = previousRightHandIKLocation;
+                
+                previousLeftHandIKLocation = skeletalMesh->GetBoneLocation(LeftHandSocketName, EBoneSpaces::WorldSpace);
+                leftHandIKLocation = previousLeftHandIKLocation;
             }
 
             // 목표 위치 업데이트
@@ -195,26 +192,29 @@ void USeraAnimation::UpdateRightHandIK(float DeltaTime)
                 DeltaTime,
                 ikTransitionSpeed);
         }
-
         else if (isTransitioningFromDoor)
         {
-            // 전환 중 기본 손 위치로 복귀
-            FVector defaultHandPos = skeletalMesh->GetBoneLocation(FName("RightHandIndex1"), EBoneSpaces::WorldSpace);
-
+            // 전환 중 기본 손 위치로 복귀 (소켓 이름 변경)
+            FVector defaultRightHandPos = skeletalMesh->GetBoneLocation(RightHandSocketName, EBoneSpaces::WorldSpace);
+            FVector defaultLeftHandPos = skeletalMesh->GetBoneLocation(LeftHandSocketName, EBoneSpaces::WorldSpace);
+            
             // 전환 비율에 따른 위치 보간
             float transitionRatio = transitionTimer / transitionDuration;
-            rightHandIKLocation = FMath::Lerp(lastValidHandPosition, defaultHandPos, transitionRatio);
+            rightHandIKLocation = FMath::Lerp(lastValidHandPosition, defaultRightHandPos, transitionRatio);
+            leftHandIKLocation = FMath::Lerp(lastValidLeftHandPosition, defaultLeftHandPos, transitionRatio);
         }
-
-        // 월드 위치를 로컬 위치로 변환
-        rightHandLocalLocation = ConvertWorldToLocalBoneSpace(rightHandIKLocation, FName("RightHandIndex1"));
+        
+        // 월드 위치를 로컬 위치로 변환 (소켓 이름 변경)
+        rightHandLocalLocation = ConvertWorldToLocalBoneSpace(rightHandIKLocation, RightHandSocketName);
+        leftHandLocalLocation = ConvertWorldToLocalBoneSpace(leftHandIKLocation, LeftHandSocketName);
     }
-
     else if (rightHandIKAlpha <= 0.01f)
     {
-        // IK 비활성화 시 위치 초기화
+        // IK 비활성화 시 위치 초기화 (양손 모두)
         rightHandIKLocation = FVector::ZeroVector;
         rightHandLocalLocation = FVector::ZeroVector;
+        leftHandIKLocation = FVector::ZeroVector;
+        leftHandLocalLocation = FVector::ZeroVector;
         hasReachedTarget = false;
     }
 }
@@ -252,20 +252,24 @@ void USeraAnimation::UpdateDoorInteractionValues()
         {
             isInteractingWithDoor = false;
 
-            // 전환 시작을 위한 현재 손 위치 저장
-            if (seraCharacter && !rightHandIKLocation.IsZero())
+            // 전환 시작을 위한 현재 손 위치 저장 (양손 모두)
+            if (seraCharacter)
             {
-                lastValidHandPosition = rightHandIKLocation;
+                if (!rightHandIKLocation.IsZero())
+                    lastValidHandPosition = rightHandIKLocation;
+                
+                if (!leftHandIKLocation.IsZero())
+                    lastValidLeftHandPosition = leftHandIKLocation;
+                
                 isTransitioningFromDoor = true;
                 transitionTimer = 0.0f;
-
+                
                 // 디버그 메시지 출력
                 GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan,
                     FString::Printf(TEXT("손 위치 전환 시작: %s에서 원래 위치로"), *lastValidHandPosition.ToString()));
             }
         }
     }
-
     else if (!isTransitioningFromDoor)
     {
         // 문이 없으면 상호작용 해제

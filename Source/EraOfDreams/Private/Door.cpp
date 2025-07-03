@@ -205,17 +205,17 @@ void ADoor::Tick(float deltaTime)
 
                     // 문 열기 초반에 속도 증가
                     if (rotationProgress < 0.3f)
-                        moveSpeed = FMath::Lerp(0.15f, 0.6f, rotationProgress / 0.3f);
+                        moveSpeed = FMath::Lerp(0.075f, 0.3f, rotationProgress / 0.3f);
                     // 문 열기 후반에 속도 감소
                     else if (rotationProgress > 0.7f)
-                        moveSpeed = FMath::Lerp(0.6f, 0.15f, (rotationProgress - 0.7f) / 0.3f);
+                        moveSpeed = FMath::Lerp(0.3f, 0.075f, (rotationProgress - 0.7f) / 0.3f);
                     // 문 열기 중간에 일정 속도 유지
                     else
-                        moveSpeed = 0.6f;
+                        moveSpeed = 0.3f;
 
                     // 속도 범위 제한
-                    moveSpeed = FMath::Clamp(moveSpeed, 0.15f, 0.6f);
-                    sideMovement = FMath::Clamp(sideMovement, -0.4f, 0.4f);
+                    moveSpeed = FMath::Clamp(moveSpeed, 0.075f, 0.3f);
+                    sideMovement = FMath::Clamp(sideMovement, -0.2f, 0.2f);
 
                     // 플레이어 이동 속도 적용 (앞뒤 및 좌우 이동)
                     playerCharacter->StartDoorInteractionMovement(moveSpeed, sideMovement);
@@ -444,7 +444,7 @@ void ADoor::StartDoorMovement()
     if (playerCharacter != nullptr)
     {
         // 문 열기/닫기에 따라 다른 이동 속도 설정
-        float initialSpeed = isOpen ? 0.8f : 0.6f;
+        float initialSpeed = isOpen ? 0.4f : 0.3f;
         float initialSideSpeed = 0.0f;
         
         // 문과 플레이어의 상대적 위치 계산하여 초기 좌우 이동 설정

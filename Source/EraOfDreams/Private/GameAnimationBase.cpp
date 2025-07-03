@@ -15,5 +15,3 @@ void FGameAnimationBaseModule::ShutdownModule()
 }
 
 #undef LOCTEXT_NAMESPACE
-    
-IMPLEMENT_MODULE(FGameAnimationBaseModule, GameAnimationBase)

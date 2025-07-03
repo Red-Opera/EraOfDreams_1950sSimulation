@@ -24,10 +24,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
     bool isInAir = false;
 
-    // 캐릭터 이동 중 상태 변수
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-    bool isMoving = false;
-
     // 오른손 IK 활성화 상태 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand IK")
     bool enableRightHandIK = false;
@@ -43,6 +39,22 @@ public:
     // 오른손 본의 로컬 위치 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand IK")
     FVector rightHandLocalLocation = FVector::ZeroVector;
+
+    // 왼손 IK 활성화 상태 변수
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand IK")
+    bool enableLeftHandIK = false;
+
+    // 왼손 IK 월드 위치 변수
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand IK")
+    FVector leftHandIKLocation = FVector::ZeroVector;
+
+    // 왼손 IK 가중치 변수 (0-1)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand IK")
+    float leftHandIKAlpha = 0.0f;
+
+    // 왼손 본의 로컬 위치 변수
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand IK")
+    FVector leftHandLocalLocation = FVector::ZeroVector;
 
     // 문 상호작용 상태 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door Interaction")
@@ -72,6 +84,22 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Hand IK", meta = (BlueprintThreadSafe = "true"))
     FVector GetRightHandLocalLocation() const { return rightHandLocalLocation; }
 
+    // 왼손 IK 위치 반환 함수
+    UFUNCTION(BlueprintCallable, Category = "Hand IK", meta = (BlueprintThreadSafe = "true"))
+    FVector GetLeftHandIKLocation() const { return leftHandIKLocation; }
+
+    // 왼손 IK 가중치 반환 함수
+    UFUNCTION(BlueprintCallable, Category = "Hand IK", meta = (BlueprintThreadSafe = "true"))
+    float GetLeftHandIKAlpha() const { return leftHandIKAlpha; }
+
+    // 왼손 IK 활성화 상태 반환 함수
+    UFUNCTION(BlueprintCallable, Category = "Hand IK", meta = (BlueprintThreadSafe = "true"))
+    bool IsLeftHandIKEnabled() const { return enableLeftHandIK; }
+
+    // 왼손 본의 로컬 위치 반환 함수
+    UFUNCTION(BlueprintCallable, Category = "Hand IK", meta = (BlueprintThreadSafe = "true"))
+    FVector GetLeftHandLocalLocation() const { return leftHandLocalLocation; }
+
     // 문 상호작용 상태 반환 함수
     UFUNCTION(BlueprintCallable, Category = "Door Interaction", meta = (BlueprintThreadSafe = "true"))
     bool IsInteractingWithDoor() const { return isInteractingWithDoor; }
@@ -91,11 +119,10 @@ protected:
     class ASera* seraCharacter;
 
     // 캐릭터 무브먼트 컴포넌트 참조
-    UPROPERTY(BlueprintReadOnly, Category = "Character")
+    UPROPERTY(BlueprintReadWrite, Category = "Character")
     class UCharacterMovementComponent* characterMovement;
 
 private:
-    void UpdateMovementValues();                // 이동 상태 업데이트 함수
     void UpdateDoorInteractionValues();         // 문 상호작용 상태 업데이트 함수
     void UpdateRightHandIK(float DeltaTime);    // 오른손 IK 업데이트 함수
     
@@ -136,4 +163,14 @@ private:
 
     // 손과 손잡이 사이 거리 저장 변수
     float currentHandToHandleDistance = 0.0f;
+
+    // 소켓 이름 상수 추가
+    const FName RightHandSocketName = FName("index_metacarpal_r");
+    const FName LeftHandSocketName = FName("index_metacarpal_l");
+    
+    // 왼손 변수 추가
+    FVector targetLeftHandIKLocation = FVector::ZeroVector;
+    FVector previousLeftHandIKLocation = FVector::ZeroVector;
+    FVector lastValidLeftHandPosition = FVector::ZeroVector;
+    float currentLeftHandToHandleDistance = 0.0f;
 };

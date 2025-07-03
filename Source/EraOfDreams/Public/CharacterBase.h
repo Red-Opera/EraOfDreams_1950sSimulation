@@ -8,7 +8,7 @@
 #include "CharacterBase.generated.h"
 
 UCLASS()
-class ERAOFDREAMS_API ACharacterBase : public AGameAnimationSampleCharacter, public IParkoruAudioBankInterface
+class ERAOFDREAMS_API ACharacterBase : public AGameAnimationSampleCharacter, public IParkoruAudioBankInterface 
 {
     GENERATED_BODY()
     
