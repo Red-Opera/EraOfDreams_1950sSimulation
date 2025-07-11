@@ -4,6 +4,9 @@
 #include "CharacterBase.h"
 #include "Sera.generated.h"
 
+// PlayerMenu 전방 선언
+class UPlayerMenu;
+
 UCLASS()
 class ERAOFDREAMS_API ASera : public ACharacterBase
 {
@@ -27,6 +30,18 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Sera|Door")
     bool IsInteractingWithDoor() const { return isDoorInteraction; }
     
+    // 인벤토리 토글 함수
+    UFUNCTION(BlueprintCallable, Category = "Sera|UI")
+    void ToggleInventory();
+    
+    // PlayerMenu 위젯 인스턴스 반환 함수
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Sera|UI")
+    UPlayerMenu* GetPlayerMenu() const;
+    
+    // PlayerMenu 위젯 생성 함수
+    UFUNCTION(BlueprintCallable, Category = "Sera|UI")
+    void CreatePlayerMenu();
+    
     // 문 상호작용 상태 변수
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sera|Door")
     bool isDoorInteraction;
@@ -49,6 +64,10 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+    
+    // 블루프린트에서 설정할 수 있는 PlayerMenu 위젯 클래스
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sera|UI", meta = (AllowPrivateAccess = "true"))
+    TSubclassOf<UPlayerMenu> playerMenuClass;
 
 private:
     // 문 상호작용 전 이동 상태 (복원용)
@@ -56,4 +75,11 @@ private:
     
     // 문 상호작용 전 달리기 상태
     bool wasRunning;
+    
+    // 인벤토리 키 입력 처리 함수
+    void HandleInventoryToggle();
+    
+    // 생성된 PlayerMenu 위젯 인스턴스 (내부적으로만 사용)
+    UPROPERTY()
+    UPlayerMenu* createdPlayerMenu;
 };
