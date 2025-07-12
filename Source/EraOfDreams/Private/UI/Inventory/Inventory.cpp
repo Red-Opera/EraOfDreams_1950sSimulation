@@ -12,6 +12,8 @@
 #include "Engine/Engine.h"
 #include "Engine/Texture2D.h"
 #include "UI/Inventory/InventorySlot.h"
+#include "UI/Inventory/ItemDataList.h"
+#include "UI/Inventory/ItemData.h"
 
 UInventory::UInventory(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -19,6 +21,7 @@ UInventory::UInventory(const FObjectInitializer& ObjectInitializer)
     // 기본 값 초기화
     currentSelectedSlotIndex = -1;
     inventorySlotClass = UInventorySlot::StaticClass();
+    itemDataList = nullptr;
 }
 
 void UInventory::NativeConstruct()
@@ -43,10 +46,52 @@ void UInventory::NativeConstruct()
     GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("[Inventory] 인벤토리 위젯 초기화 완료"));
 }
 
+void UInventory::SetItemDataList(UItemDataList* dataList)
+{
+    itemDataList = dataList;
+
+    if (itemDataList != nullptr)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green,
+            FString::Printf(TEXT("[Inventory] 아이템 데이터 리스트 설정됨: %d개 아이템"), dataList->GetAllItems().Num()));
+    }
+
+    else
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] 경고: 유효하지 않은 아이템 데이터 리스트"));
+}
+
+bool UInventory::AddItemByName(const FString& itemName, int32 count)
+{
+    // 데이터 에셋 유효성 검사
+    if (itemDataList == nullptr)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, 
+            TEXT("[Inventory] 오류: 아이템 데이터 리스트가 설정되지 않았습니다"));
+
+        return false;
+    }
+    
+    // 아이템 데이터 조회
+    FItemData itemData = itemDataList->GetItemByName(itemName);
+    
+    if (itemData.itemName.IsEmpty())
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, 
+            FString::Printf(TEXT("[Inventory] 오류: 아이템 이름 '%s'을(를) 찾을 수 없습니다"), *itemName));
+        return false;
+    }
+    
+    // 수량 설정
+    itemData.count = count;
+    
+    // 아이템 추가
+    return AddItem(itemData);
+}
+
 UInventorySlot* UInventory::CreateInventorySlot(int32 slotIndex)
 {
     // 슬롯 클래스 유효성 검사
-    if (!inventorySlotClass)
+    if (inventorySlotClass == nullptr)
     {
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, 
             TEXT("[Inventory] 경고: 인벤토리 슬롯 클래스가 설정되지 않았습니다. 블루프린트에서 인벤토리 슬롯 클래스를 설정하세요."));
@@ -57,7 +102,7 @@ UInventorySlot* UInventory::CreateInventorySlot(int32 slotIndex)
     // 슬롯 위젯 생성 및 설정
     UInventorySlot* newSlot = CreateWidget<UInventorySlot>(GetOwningPlayer(), inventorySlotClass);
     
-    if (newSlot)
+    if (newSlot != nullptr)
     {
         newSlot->SetSlotIndex(slotIndex);
         newSlot->OnSlotClicked.AddDynamic(this, &UInventory::OnInventorySlotClicked);
@@ -72,7 +117,7 @@ UInventorySlot* UInventory::CreateInventorySlot(int32 slotIndex)
 void UInventory::InitializeInventorySlots()
 {
     // 슬롯 클래스 유효성 검사
-    if (!inventorySlotClass)
+    if (inventorySlotClass == nullptr)
     {
         GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("[Inventory] 오류: 인벤토리 슬롯 클래스가 설정되지 않았습니다. 블루프린트에서 설정하세요."));
 
@@ -103,7 +148,7 @@ void UInventory::InitializeInventorySlots()
             {
                 UVerticalBoxSlot* vBoxSlot = Cast<UVerticalBoxSlot>(hBox->Slot);
 
-                if (vBoxSlot)
+                if (vBoxSlot != nullptr)
                     vBoxSlot->SetPadding(FMargin(0, 0, 0, slotVerticalSpacing));
             }
         }
@@ -114,7 +159,7 @@ void UInventory::InitializeInventorySlots()
     {
         UHorizontalBox* currentHBox = slotHorizontalBoxes[boxIndex];
 
-        if (!currentHBox)
+        if (currentHBox == nullptr)
             continue;
 
         // 기존 슬롯 제거
@@ -127,6 +172,7 @@ void UInventory::InitializeInventorySlots()
             
             // 크기 제한 박스 생성
             USizeBox* sizeBox = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+
             sizeBox->SetWidthOverride(slotSize);
             sizeBox->SetHeightOverride(slotSize);
             
@@ -141,12 +187,10 @@ void UInventory::InitializeInventorySlots()
                 UHorizontalBoxSlot* hBoxSlot = Cast<UHorizontalBoxSlot>(currentHBox->AddChild(sizeBox));
                 
                 if (hBoxSlot && slotIndex < 3)
-                {
                     hBoxSlot->SetPadding(FMargin(0, 0, slotHorizontalSpacing, 0));
-                }
                 
                 inventorySlots.Add(newSlot);
-                newSlot->SetItemCount(inventoryIndex);
+                newSlot->SetItemCount(0);
             }
         }
     }
@@ -198,54 +242,59 @@ void UInventory::UpdateInventoryDisplay()
     // 모든 슬롯 초기화
     for (int32 i = 0; i < inventorySlots.Num(); i++)
     {
-        if (inventorySlots[i] == nullptr)
-            continue;
+        if (inventorySlots.IsValidIndex(i) && inventorySlots[i] != nullptr)
+        {
+            inventorySlots[i]->SetItemIcon(nullptr);
+            inventorySlots[i]->SetItemCount(0);
+        }
+    }
 
+    if (itemDataList == nullptr)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] itemDataList가 유효하지 않습니다."));
 
-        inventorySlots[i]->SetItemIcon(nullptr);
-        inventorySlots[i]->SetItemCount(0);
-        inventorySlots[i]->SetSelected(i == currentSelectedSlotIndex);
+        return;
     }
 
     // 아이템 데이터로 슬롯 UI 갱신
-    for (int32 i = 0; i < inventoryItems.Num() && i < inventorySlots.Num(); i++)
+    for (int32 i = 0; i < itemDataList->itemList.Num() && i < inventorySlots.Num(); i++)
     {
-        const FInventoryItemData& item = inventoryItems[i];
-
-        if (inventorySlots[i] == nullptr)
-            continue;
-
-        inventorySlots[i]->SetItemIcon(item.itemIcon);
-        inventorySlots[i]->SetItemCount(item.count);
-        inventorySlots[i]->SetSelected(i == currentSelectedSlotIndex);
+        if (inventorySlots.IsValidIndex(i) && inventorySlots[i] != nullptr)
+        {
+            const FItemData& itemData = itemDataList->itemList[i];
+            inventorySlots[i]->SetItemIcon(itemData.itemIcon);
+            inventorySlots[i]->SetItemCount(itemData.count);
+        }
     }
 }
 
 void UInventory::UpdateSelectedItemInfo(int32 slotIndex)
 {
-    // 선택된 아이템 정보 표시
-    if (slotIndex >= 0 && slotIndex < inventoryItems.Num())
+    if (itemDataList == nullptr)
     {
-        const FInventoryItemData& item = inventoryItems[slotIndex];
-        
-        // 아이템 이름 표시
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] itemDataList가 유효하지 않습니다."));
+
+        return;
+    }
+
+    // 선택된 아이템 정보 표시
+    if (slotIndex >= 0 && slotIndex < itemDataList->itemList.Num())
+    {
+        const FItemData& itemData = itemDataList->itemList[slotIndex];
+
         if (hoveredItemNameText != nullptr)
-            hoveredItemNameText->SetText(FText::FromString(item.itemName));
-        
-        // 아이템 상세 정보 표시
+            hoveredItemNameText->SetText(FText::FromString(itemData.itemName));
+
         if (hoveredItemMoreInfo != nullptr)
-        {
-            FString infoText = FString::Printf(TEXT("[Inventory] %s\n수량: %d\n%s"), *item.itemType, item.count, *item.itemDescription);
-            hoveredItemMoreInfo->SetText(FText::FromString(infoText));
-        }
+            hoveredItemMoreInfo->SetText(FText::FromString(itemData.itemDescription));
     }
 
     else
     {
-        // 선택된 아이템이 없을 때 정보창 초기화
+        // 선택 해제 시 정보 초기화
         if (hoveredItemNameText != nullptr)
             hoveredItemNameText->SetText(FText::FromString(TEXT("")));
-        
+
         if (hoveredItemMoreInfo != nullptr)
             hoveredItemMoreInfo->SetText(FText::FromString(TEXT("")));
     }
@@ -262,102 +311,79 @@ int32 UInventory::CalculateSlotIndex(UWidget* SlotWidget)
 {
     // 슬롯 위젯에서 인덱스 추출
     UInventorySlot* clickedSlot = Cast<UInventorySlot>(SlotWidget);
-    if (clickedSlot)
-    {
+
+    if (clickedSlot != nullptr)
         return clickedSlot->GetSlotIndex();
-    }
     
     GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] 클릭된 위젯이 InventorySlot이 아닙니다."));
+
     return -1;
 }
 
-void UInventory::OnTopShortcutClicked()
+bool UInventory::AddItem(const FItemData& newItem)
 {
-    // 상단 단축키 처리
-    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Cyan, TEXT("[Inventory] 상단 단축키 클릭됨"));
-}
-
-void UInventory::OnRightShortcutClicked()
-{
-    // 우측 단축키 처리
-    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Cyan, TEXT("[Inventory] 우측 단축키 클릭됨"));
-}
-
-void UInventory::OnBotShortcutClicked()
-{
-    // 하단 단축키 처리
-    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Cyan, TEXT("[Inventory] 하단 단축키 클릭됨"));
-}
-
-void UInventory::OnLeftShortcutClicked()
-{
-    // 좌측 단축키 처리
-    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Cyan, TEXT("[Inventory] 좌측 단축키 클릭됨"));
-}
-
-bool UInventory::AddItem(const FInventoryItemData& newItem)
-{
-    // 인벤토리 여유 공간 확인 후 아이템 추가
-    if (inventoryItems.Num() < 20)
+    if (itemDataList == nullptr)
     {
-        inventoryItems.Add(newItem);
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] itemDataList가 유효하지 않습니다."));
+
+        return false;
+    }
+
+    // 인벤토리 여유 공간 확인 후 아이템 추가
+    if (itemDataList->itemList.Num() < 20)
+    {
+        itemDataList->itemList.Add(newItem);
         UpdateInventoryDisplay();
-        
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("[Inventory] 아이템 추가됨: %s"), *newItem.itemName));
+
         return true;
     }
     
     GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] 인벤토리가 가득참"));
+
     return false;
 }
 
 bool UInventory::RemoveItem(int32 slotIndex)
 {
-    // 슬롯 인덱스 유효성 검사
-    if (slotIndex < 0 || slotIndex >= inventoryItems.Num())
+    if (itemDataList == nullptr)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] 유효하지 않은 슬롯 인덱스"));
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] itemDataList가 유효하지 않습니다."));
+
         return false;
     }
 
-    FString itemName = inventoryItems[slotIndex].itemName;
-    inventoryItems.RemoveAt(slotIndex);
-    UpdateInventoryDisplay();
-
-    // 선택된 슬롯이 제거된 경우 선택 해제
-    if (currentSelectedSlotIndex == slotIndex)
+    // 슬롯 인덱스 유효성 검사
+    if (itemDataList->itemList.IsValidIndex(slotIndex))
     {
-        currentSelectedSlotIndex = -1;
-        UpdateSelectedItemInfo(-1);
+        itemDataList->itemList.RemoveAt(slotIndex);
+        UpdateInventoryDisplay();
+
+        return true;
     }
 
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, FString::Printf(TEXT("[Inventory] 아이템 제거됨: %s"), *itemName));
-    return true;
+    return false;
 }
 
 bool UInventory::UseItem(int32 slotIndex)
 {
-    // 선택된 슬롯과 사용 슬롯 일치 확인
-    if (currentSelectedSlotIndex != slotIndex)
+    if (itemDataList == nullptr)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] 현재 선택된 슬롯과 사용하려는 슬롯이 다릅니다."));
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] itemDataList가 유효하지 않습니다."));
+
         return false;
     }
 
-    FInventoryItemData& item = inventoryItems[slotIndex];
-
-    // 아이템 사용 처리
-    if (item.count > 0)
+    if (itemDataList->itemList.IsValidIndex(slotIndex))
     {
-        item.count--;
+        // 아이템 사용 로직 (수량 감소)
+        itemDataList->itemList[slotIndex].count--;
 
-        // 수량이 0이 되면 아이템 제거
-        if (item.count <= 0)
+        if (itemDataList->itemList[slotIndex].count <= 0)
             RemoveItem(slotIndex);
+
         else
             UpdateInventoryDisplay();
 
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("[Inventory] 아이템 사용됨: %s"), *item.itemName));
         return true;
     }
 
@@ -369,23 +395,28 @@ void UInventory::ShowInventory()
     // 인벤토리 UI 표시
     SetVisibility(ESlateVisibility::Visible);
     UpdateInventoryDisplay();
+
     GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, TEXT("[Inventory] 인벤토리 표시됨"));
 }
 
 void UInventory::HideInventory()
 {
-    // 인벤토리 UI 숨김
     SetVisibility(ESlateVisibility::Hidden);
-    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("[Inventory] 인벤토리 숨겨짐"));
 }
 
-FInventoryItemData UInventory::GetCurrentSelectedItem() const
+FItemData UInventory::GetCurrentSelectedItem() const
 {
-    // 현재 선택된 아이템 반환
-    if (currentSelectedSlotIndex >= 0 && currentSelectedSlotIndex < inventoryItems.Num())
-        return inventoryItems[currentSelectedSlotIndex];
+    if (itemDataList == nullptr)
+    {
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[Inventory] itemDataList가 유효하지 않습니다."));
 
-    return FInventoryItemData(); 
+        return FItemData();
+    }
+
+    if (currentSelectedSlotIndex >= 0 && currentSelectedSlotIndex < itemDataList->itemList.Num())
+        return itemDataList->itemList[currentSelectedSlotIndex];
+
+    return FItemData();
 }
 
 void UInventory::SetHealthStatus(const FString& healthText)

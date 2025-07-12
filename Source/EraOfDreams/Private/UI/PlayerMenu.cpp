@@ -11,19 +11,16 @@ void UPlayerMenu::NativeConstruct()
     isInventoryOpen = false;
 
     // 인벤토리 위젯을 찾을 수 없을 때 오류 메시지 출력
-    if (inventory == nullptr)
+    if (inventoryTab == nullptr)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("[PlayerMenu] inventory가 nullptr입니다. PlayerMenu 위젯이 올바르게 설정되었는지 확인하세요."));
+        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("[PlayerMenu] inventoryTab가 nullptr입니다. PlayerMenu 위젯이 올바르게 설정되었는지 확인하세요."));
 
         return;
     }
 
     // 인벤토리 슬롯 간격 설정
-    inventory->SetSlotHorizontalSpacing(10.0f);     // 수평 간격 10픽셀
-    inventory->SetSlotVerticalSpacing(20.0f);       // 수직 간격 20픽셀 (수평보다 더 크게)
-
-    // 테스트용 아이템 추가
-    AddTestItems();
+    inventoryTab->SetSlotHorizontalSpacing(10.0f);     // 수평 간격 10픽셀
+    inventoryTab->SetSlotVerticalSpacing(20.0f);       // 수직 간격 20픽셀 (수평보다 더 크게)
 
     // 디버그 메시지
     GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Blue, TEXT("[PlayerMenu] NativeConstruct 완료"));
@@ -61,7 +58,7 @@ void UPlayerMenu::UnregisterInputEvents()
 void UPlayerMenu::HandleInventoryToggle()
 {
     // 인벤토리 위젯이 유효한지 확인
-    if (inventory == nullptr)
+    if (inventoryTab == nullptr)
     {
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[PlayerMenu] 인벤토리 위젯이 없어 토글할 수 없습니다."));
 
@@ -99,7 +96,7 @@ void UPlayerMenu::ToggleInventory()
 void UPlayerMenu::ShowInventory()
 {
     // 인벤토리 위젯 유효성 확인
-    if (inventory == nullptr)
+    if (inventoryTab == nullptr)
     {
 		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[PlayerMenu] 인벤토리 위젯이 없어 표시할 수 없습니다."));
 
@@ -107,7 +104,7 @@ void UPlayerMenu::ShowInventory()
     }
     
     // 인벤토리 표시
-    inventory->ShowInventory();
+    inventoryTab->ShowInventory();
     isInventoryOpen = true;
 
 	APlayerController* playerController = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
@@ -131,7 +128,7 @@ void UPlayerMenu::ShowInventory()
 void UPlayerMenu::HideInventory()
 {
     // 인벤토리 위젯 유효성 확인
-    if (inventory == nullptr)
+    if (inventoryTab == nullptr)
     {
 		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("[PlayerMenu] 인벤토리 위젯이 없어 숨길 수 없습니다."));
 
@@ -139,7 +136,7 @@ void UPlayerMenu::HideInventory()
     }
     
     // 인벤토리 숨김
-    inventory->HideInventory();
+    inventoryTab->HideInventory();
     isInventoryOpen = false;
 
 	// 플레이어 컨트롤러가 유효한지 확인
@@ -154,40 +151,4 @@ void UPlayerMenu::HideInventory()
     
     // 디버그 메시지
 	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, TEXT("[PlayerMenu] 인벤토리 숨김 - 게임 전용 모드로 복원"));
-}
-
-void UPlayerMenu::AddTestItems()
-{
-    if (inventory == nullptr)
-    {
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("[PlayerMenu] inventory가 nullptr입니다. PlayerMenu 위젯이 올바르게 설정되었는지 확인하세요."));
-
-        return;
-    }
-
-    // 테스트용 아이템들 추가
-    FInventoryItemData testItem1;
-    testItem1.itemName = TEXT("M1897");
-    testItem1.itemType = TEXT("무기");
-    testItem1.count = 12;
-    testItem1.itemDescription = TEXT("강력한 샷건");
-
-    inventory->AddItem(testItem1);
-
-    FInventoryItemData testItem2;
-    testItem2.itemName = TEXT("응급치료키트");
-    testItem2.itemType = TEXT("의료용품");
-    testItem2.count = 3;
-    testItem2.itemDescription = TEXT("체력을 회복시켜줍니다");
-    inventory->AddItem(testItem2);
-
-    FInventoryItemData testItem3;
-    testItem3.itemName = TEXT("열쇠");
-    testItem3.itemType = TEXT("도구");
-    testItem3.count = 1;
-    testItem3.itemDescription = TEXT("특정 문을 열 수 있습니다");
-    inventory->AddItem(testItem3);
-
-	// 디버그 메시지
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("[PlayerMenu] 테스트 아이템 추가 완료"));
 }

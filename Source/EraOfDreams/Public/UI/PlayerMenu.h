@@ -17,7 +17,7 @@ protected:
     // 인벤토리 위젯 참조 (블루프린트에서 바인딩)
     // 블루프린트에서 접근할 수 있도록 BlueprintReadOnly 추가
     UPROPERTY(meta = (BindWidget))
-    class UInventory* inventory;
+    class UInventory* inventoryTab;
 
     // 메인 입력 처리
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
@@ -35,13 +35,9 @@ public:
     UFUNCTION(BlueprintCallable)
     void HideInventory();
 
-    // 테스트용 아이템 추가
-    UFUNCTION(BlueprintCallable)
-    void AddTestItems();
-
     // 인벤토리 위젯 getter 함수 추가
     UFUNCTION(BlueprintCallable, BlueprintPure)
-    UInventory* GetInventory() const { return inventory; }
+    UInventory* GetInventory() const { return inventoryTab; }
 
     // 인벤토리 열림 상태 확인
     UFUNCTION(BlueprintCallable, BlueprintPure)

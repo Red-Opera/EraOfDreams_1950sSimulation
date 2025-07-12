@@ -14,44 +14,9 @@
 #include "Components/SizeBox.h"
 #include "Engine/Texture2D.h"
 #include "UI/Inventory/InventorySlot.h"
+#include "UI/Inventory/ItemData.h"
+#include "UI/Inventory/ItemDataList.h"
 #include "Inventory.generated.h"
-
-// 게임 내 아이템 데이터를 정의하는 구조체
-USTRUCT(BlueprintType)
-struct FInventoryItemData
-{
-    GENERATED_BODY()
-
-    // 아이템의 시각적 표현
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    UTexture2D* itemIcon;
-
-    // 아이템의 식별 이름
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    FString itemName;
-
-    // 보유 중인 아이템 개수
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int32 count;
-
-    // 아이템의 분류 카테고리
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    FString itemType;
-
-    // 아이템에 대한 상세 설명
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    FString itemDescription;
-
-    // 기본 생성자로 초기화
-    FInventoryItemData()
-    {
-        itemIcon = nullptr;
-        itemName = TEXT("");
-        count = 0;
-        itemType = TEXT("");
-        itemDescription = TEXT("");
-    }
-};
 
 // 인벤토리 UI 위젯 클래스
 UCLASS()
@@ -88,6 +53,10 @@ protected:
     // 슬롯 간 세로 간격
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Config", meta = (DisplayName = "슬롯 수직 간격(픽셀)"))
     float slotVerticalSpacing = 20.0f;
+
+    // 아이템 데이터 리스트 참조
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Config", meta = (DisplayName = "아이템 데이터 에셋"))
+    UItemDataList* itemDataList;
 
     // 1행 슬롯 컨테이너
     UPROPERTY(meta = (BindWidget))
@@ -146,10 +115,6 @@ protected:
     class UVerticalBox* list;
 
 private:
-    // 인벤토리에 보관 중인 아이템 목록
-    UPROPERTY()
-    TArray<FInventoryItemData> inventoryItems;
-
     // 현재 선택한 슬롯 번호
     UPROPERTY()
     int32 currentSelectedSlotIndex;
@@ -157,22 +122,6 @@ private:
     // 생성된 인벤토리 슬롯 위젯 목록
     UPROPERTY()
     TArray<UInventorySlot*> inventorySlots;
-
-    // 상단 단축키 클릭 처리
-    UFUNCTION()
-    void OnTopShortcutClicked();
-
-    // 우측 단축키 클릭 처리
-    UFUNCTION()
-    void OnRightShortcutClicked();
-
-    // 하단 단축키 클릭 처리
-    UFUNCTION()
-    void OnBotShortcutClicked();
-
-    // 좌측 단축키 클릭 처리
-    UFUNCTION()
-    void OnLeftShortcutClicked();
     
     // 인벤토리 슬롯 클릭 이벤트 처리
     UFUNCTION()
@@ -200,9 +149,17 @@ private:
     UInventorySlot* CreateInventorySlot(int32 slotIndex);
 
 public:
+    // 아이템 데이터 에셋 설정
+    UFUNCTION(BlueprintCallable, Category = "Inventory")
+    void SetItemDataList(UItemDataList* dataList);
+
+    // 데이터 에셋에서 지정된 이름의 아이템을 인벤토리에 추가
+    UFUNCTION(BlueprintCallable, Category = "Inventory")
+    bool AddItemByName(const FString& itemName, int32 count = 1);
+
     // 인벤토리에 새 아이템 추가
     UFUNCTION(BlueprintCallable)
-    bool AddItem(const FInventoryItemData& newItem);
+    bool AddItem(const FItemData& newItem);
 
     // 지정된 슬롯의 아이템 제거
     UFUNCTION(BlueprintCallable)
@@ -222,7 +179,7 @@ public:
 
     // 현재 선택된 아이템 정보 반환
     UFUNCTION(BlueprintCallable)
-    FInventoryItemData GetCurrentSelectedItem() const;
+    FItemData GetCurrentSelectedItem() const;
 
     // 플레이어 체력 상태 텍스트 설정
     UFUNCTION(BlueprintCallable)
