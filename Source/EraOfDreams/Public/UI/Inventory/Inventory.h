@@ -6,248 +6,229 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
 #include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
+#include "Components/SizeBox.h"
 #include "Engine/Texture2D.h"
+#include "UI/Inventory/InventorySlot.h"
 #include "Inventory.generated.h"
 
-// 인벤토리 아이템 구조체
+// 게임 내 아이템 데이터를 정의하는 구조체
 USTRUCT(BlueprintType)
 struct FInventoryItemData
 {
     GENERATED_BODY()
 
-    // 아이템 아이콘 이미지
+    // 아이템의 시각적 표현
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* itemIcon;
 
-    // 아이템 이름
+    // 아이템의 식별 이름
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FString itemName;
 
-    // 아이템 수량
+    // 보유 중인 아이템 개수
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int32 quantity;
+    int32 count;
 
-    // 아이템 타입 (무기, 의료용품 등)
+    // 아이템의 분류 카테고리
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FString itemType;
 
-    // 아이템 설명
+    // 아이템에 대한 상세 설명
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FString itemDescription;
 
+    // 기본 생성자로 초기화
     FInventoryItemData()
     {
         itemIcon = nullptr;
         itemName = TEXT("");
-        quantity = 0;
+        count = 0;
         itemType = TEXT("");
         itemDescription = TEXT("");
     }
 };
 
+// 인벤토리 UI 위젯 클래스
 UCLASS()
 class ERAOFDREAMS_API UInventory : public UUserWidget
 {
     GENERATED_BODY()
 
 public:
+    // 생성자
     UInventory(const FObjectInitializer& ObjectInitializer);
 
-protected:
-    virtual void NativeConstruct() override;
+    // 슬롯 간 수평 간격 설정 함수
+    void SetSlotHorizontalSpacing(float newSpacing) { slotHorizontalSpacing = newSpacing; }
     
-    // 인벤토리 아이템 슬롯들 (HBBox1~5)
+    // 슬롯 간 수직 간격 설정 함수
+    void SetSlotVerticalSpacing(float newSpacing) { slotVerticalSpacing = newSpacing; }
+
+protected:
+    // 위젯 초기 구성 시 호출
+    virtual void NativeConstruct() override;
+
+    // 인벤토리 슬롯에 사용할 위젯 클래스
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Config", meta = (DisplayName = "인벤토리 슬롯 클래스"))
+    TSubclassOf<UInventorySlot> inventorySlotClass;
+    
+    // 각 인벤토리 슬롯의 크기
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Config", meta = (DisplayName = "슬롯 크기(픽셀)"))
+    float slotSize = 100.0f;
+
+    // 슬롯 간 가로 간격
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Config", meta = (DisplayName = "슬롯 수평 간격(픽셀)"))
+    float slotHorizontalSpacing = 10.0f;
+
+    // 슬롯 간 세로 간격
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Config", meta = (DisplayName = "슬롯 수직 간격(픽셀)"))
+    float slotVerticalSpacing = 20.0f;
+
+    // 1행 슬롯 컨테이너
     UPROPERTY(meta = (BindWidget))
     class UHorizontalBox* slotHorizontalBox1;
 
+    // 2행 슬롯 컨테이너
     UPROPERTY(meta = (BindWidget))
     class UHorizontalBox* slotHorizontalBox2;
 
+    // 3행 슬롯 컨테이너
     UPROPERTY(meta = (BindWidget))
     class UHorizontalBox* slotHorizontalBox3;
 
+    // 4행 슬롯 컨테이너
     UPROPERTY(meta = (BindWidget))
     class UHorizontalBox* slotHorizontalBox4;
 
+    // 5행 슬롯 컨테이너
     UPROPERTY(meta = (BindWidget))
     class UHorizontalBox* slotHorizontalBox5;
 
-    // 인벤토리 상단 라인 이미지
+    // 인벤토리 상단 구분선
     UPROPERTY(meta = (BindWidget))
     class UImage* inventoryTopLineImage;
 
-    // 체력 신호 이미지
+    // 체력 상태 아이콘
     UPROPERTY(meta = (BindWidget))
     class UImage* heartSignalImage;
 
-    // 체력 상태 텍스트 블록
+    // 플레이어 체력 상태 텍스트
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* healthStatusText;
 
-    // 가이드 수평 박스
+    // 조작 가이드 컨테이너
     UPROPERTY(meta = (BindWidget))
     class UHorizontalBox* guideHorizontalBox;
 
-    // 확인/뒤로가기 버튼들의 텍스트
+    // 확인 버튼 텍스트
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* confirmText;
 
+    // 뒤로가기 버튼 텍스트
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* backText;
 
-    // 호버된 아이템 이름 텍스트
+    // 선택된 아이템 이름 표시
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* hoveredItemNameText;
 
-    // 호버된 아이템 정보 텍스트
+    // 선택된 아이템 상세 정보 표시
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* hoveredItemMoreInfo;
 
-    // 리스트 컨테이너
+    // 슬롯 행 컨테이너
     UPROPERTY(meta = (BindWidget))
     class UVerticalBox* list;
 
 private:
-    // 인벤토리 데이터
+    // 인벤토리에 보관 중인 아이템 목록
     UPROPERTY()
     TArray<FInventoryItemData> inventoryItems;
 
-    // 현재 선택된 슬롯 인덱스
+    // 현재 선택한 슬롯 번호
     UPROPERTY()
     int32 currentSelectedSlotIndex;
 
-    // 인벤토리 슬롯 버튼들 배열
+    // 생성된 인벤토리 슬롯 위젯 목록
     UPROPERTY()
-    TArray<UButton*> inventorySlotButtons;
+    TArray<UInventorySlot*> inventorySlots;
 
-    // 슬롯 이미지들 배열
-    UPROPERTY()
-    TArray<UImage*> inventorySlotImages;
-
-    // 슬롯 텍스트들 배열 (수량 표시용)
-    UPROPERTY()
-    TArray<UTextBlock*> inventorySlotTexts;
-
-    // === 입력 처리 함수들 ===
+    // 상단 단축키 클릭 처리
     UFUNCTION()
     void OnTopShortcutClicked();
 
+    // 우측 단축키 클릭 처리
     UFUNCTION()
     void OnRightShortcutClicked();
 
+    // 하단 단축키 클릭 처리
     UFUNCTION()
     void OnBotShortcutClicked();
 
+    // 좌측 단축키 클릭 처리
     UFUNCTION()
     void OnLeftShortcutClicked();
+    
+    // 인벤토리 슬롯 클릭 이벤트 처리
+    UFUNCTION()
+    void OnInventorySlotClicked(int32 slotIndex);
 
-    // 실제 슬롯 클릭 처리 헬퍼 함수
+    // 슬롯 클릭 처리 로직
     void HandleSlotClicked(int32 slotIndex);
     
-    // 인벤토리 슬롯 초기화
+    // 인벤토리 슬롯 초기 생성 및 설정
     void InitializeInventorySlots();
 
-    // 인벤토리 표시 업데이트
+    // 인벤토리 UI 상태 갱신
     void UpdateInventoryDisplay();
 
-    // 선택된 아이템 정보 업데이트
+    // 선택된 아이템 정보창 갱신
     void UpdateSelectedItemInfo(int32 SlotIndex);
 
-    // 체력 상태 업데이트
+    // 플레이어 체력 상태 갱신
     void UpdateHealthStatus();
 
-    // 슬롯 인덱스 계산 (HBBox 기반)
+    // 위젯에서 슬롯 인덱스 계산
     int32 CalculateSlotIndex(UWidget* SlotWidget);
+    
+    // 인벤토리 슬롯 위젯 생성
+    UInventorySlot* CreateInventorySlot(int32 slotIndex);
 
 public:
-    UFUNCTION(BlueprintCallable)
-    void OnSlot0Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot1Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot2Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot3Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot4Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot5Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot6Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot7Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot8Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot9Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot10Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot11Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot12Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot13Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot14Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot15Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot16Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot17Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot18Clicked();
-    
-    UFUNCTION(BlueprintCallable)
-    void OnSlot19Clicked();
-
-    // 아이템 추가
+    // 인벤토리에 새 아이템 추가
     UFUNCTION(BlueprintCallable)
     bool AddItem(const FInventoryItemData& newItem);
 
-    // 아이템 제거
+    // 지정된 슬롯의 아이템 제거
     UFUNCTION(BlueprintCallable)
     bool RemoveItem(int32 slotIndex);
 
-    // 아이템 사용
+    // 아이템 사용 처리
     UFUNCTION(BlueprintCallable)
     bool UseItem(int32 slotIndex);
 
-    // 인벤토리 표시
+    // 인벤토리 UI 표시
     UFUNCTION(BlueprintCallable)
     void ShowInventory();
 
-    // 인벤토리 숨김
+    // 인벤토리 UI 숨김
     UFUNCTION(BlueprintCallable)
     void HideInventory();
 
-    // 현재 선택된 아이템 가져오기
+    // 현재 선택된 아이템 정보 반환
     UFUNCTION(BlueprintCallable)
     FInventoryItemData GetCurrentSelectedItem() const;
 
-    // 체력 상태 설정
+    // 플레이어 체력 상태 텍스트 설정
     UFUNCTION(BlueprintCallable)
     void SetHealthStatus(const FString& healthText);
+    
+    // 인벤토리 슬롯 위젯 클래스 설정
+    UFUNCTION(BlueprintCallable)
+    void SetInventorySlotClass(TSubclassOf<UInventorySlot> slotClass) { inventorySlotClass = slotClass; }
 };

@@ -10,9 +10,6 @@ void UPlayerMenu::NativeConstruct()
     // 인벤토리 초기 상태 설정
     isInventoryOpen = false;
 
-    // 위젯 계층에서 인벤토리 위젯 찾기 시도
-    inventory = Cast<UInventory>(GetWidgetFromName(TEXT("inventoryBlueprint")));
-
     // 인벤토리 위젯을 찾을 수 없을 때 오류 메시지 출력
     if (inventory == nullptr)
     {
@@ -20,6 +17,10 @@ void UPlayerMenu::NativeConstruct()
 
         return;
     }
+
+    // 인벤토리 슬롯 간격 설정
+    inventory->SetSlotHorizontalSpacing(10.0f);     // 수평 간격 10픽셀
+    inventory->SetSlotVerticalSpacing(20.0f);       // 수직 간격 20픽셀 (수평보다 더 크게)
 
     // 테스트용 아이템 추가
     AddTestItems();
@@ -168,7 +169,7 @@ void UPlayerMenu::AddTestItems()
     FInventoryItemData testItem1;
     testItem1.itemName = TEXT("M1897");
     testItem1.itemType = TEXT("무기");
-    testItem1.quantity = 12;
+    testItem1.count = 12;
     testItem1.itemDescription = TEXT("강력한 샷건");
 
     inventory->AddItem(testItem1);
@@ -176,14 +177,14 @@ void UPlayerMenu::AddTestItems()
     FInventoryItemData testItem2;
     testItem2.itemName = TEXT("응급치료키트");
     testItem2.itemType = TEXT("의료용품");
-    testItem2.quantity = 3;
+    testItem2.count = 3;
     testItem2.itemDescription = TEXT("체력을 회복시켜줍니다");
     inventory->AddItem(testItem2);
 
     FInventoryItemData testItem3;
     testItem3.itemName = TEXT("열쇠");
     testItem3.itemType = TEXT("도구");
-    testItem3.quantity = 1;
+    testItem3.count = 1;
     testItem3.itemDescription = TEXT("특정 문을 열 수 있습니다");
     inventory->AddItem(testItem3);
 

@@ -11,12 +11,12 @@ class ERAOFDREAMS_API UPlayerMenu : public UUserWidget
     GENERATED_BODY()
 
 protected:
-    virtual void NativeConstruct() override;
+    virtual void NativeConstruct() override; 
     virtual void NativeDestruct() override;
 
     // 인벤토리 위젯 참조 (블루프린트에서 바인딩)
     // 블루프린트에서 접근할 수 있도록 BlueprintReadOnly 추가
-    UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
+    UPROPERTY(meta = (BindWidget))
     class UInventory* inventory;
 
     // 메인 입력 처리
