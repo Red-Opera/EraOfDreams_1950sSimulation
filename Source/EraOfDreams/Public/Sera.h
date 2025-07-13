@@ -4,7 +4,6 @@
 #include "CharacterBase.h"
 #include "Sera.generated.h"
 
-// PlayerMenu 전방 선언
 class UPlayerMenu;
 
 UCLASS()
