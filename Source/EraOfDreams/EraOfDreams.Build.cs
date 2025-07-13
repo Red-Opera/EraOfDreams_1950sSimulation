@@ -27,8 +27,12 @@ public class EraOfDreams : ModuleRules
         });
 
         PublicIncludePaths.Add("EraOfDreams/Public");
-        PublicIncludePaths.Add("EraOfDreams/Public/Core");
-        PublicIncludePaths.Add("EraOfDreams/Public/Traversal");
-        PublicIncludePaths.Add("EraOfDreams/Public/Samples");
+        PublicIncludePaths.Add("EraOfDreams/Public/Character");
+        PublicIncludePaths.Add("EraOfDreams/Public/Character/Sera");
+        PublicIncludePaths.Add("EraOfDreams/Public/Concert");
+        PublicIncludePaths.Add("EraOfDreams/Public/Input");
+        PublicIncludePaths.Add("EraOfDreams/Public/MoveParkoru/Core");
+        PublicIncludePaths.Add("EraOfDreams/Public/MoveParkoru/Traversal");
+        PublicIncludePaths.Add("EraOfDreams/Public/MoveParkoru/Samples");
     }
 }
